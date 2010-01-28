@@ -23,6 +23,7 @@ $PluginInfo['SSLControllers'] = array(
 * They primarily enable us to override the default WebRoot definition and set the authenticator's protocol on demand.
 * Some are probably not used by the core methods this plugin calls, but just get them to be sure. 
 * 
+* class.controller.php
 * class.url.php
 * class.dispatcher.php
 * class.passwordauthenticator.php
