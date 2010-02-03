@@ -3,7 +3,7 @@
 $PluginInfo['SSLControllers'] = array(
     'Name' => 'SSLControllers',
     'Description' => 'SSL Enabled Controllers',
-    'Version' => '0.9',
+    'Version' => '1.0',
     'Author' => "Derek Donnelly",
     'AuthorUrl' => 'http://www.derekdonnelly.com',
 );
@@ -45,6 +45,7 @@ class SSLControllers implements Gdn_IPlugin
     protected $_SSLSupport = TRUE;
     protected $_SecureControllers = array('entrycontroller', 'utilitycontroller', 'settingscontroller', 'postcontroller'); // Default controllers to secure at setup
     protected $_SecureSession = FALSE;
+    protected $_UsePopups = FALSE;
     protected $_HTTP_PROTOCOL = 'http://'; // Why do I get an error when I try to define constants?
     protected $_HTTPS_PROTOCOL = 'https://';
     protected $_ProtocolWebRoot = '';
@@ -59,11 +60,13 @@ class SSLControllers implements Gdn_IPlugin
         // Don't proceed if the sender is Leaving
         if((Isset($Sender->Leaving) && ($Sender->Leaving))) return;
         
-        // Get the SSL support config setting
+        // Get the SSL support & popup config settings
         $SSLSupport = Gdn::Config('Garden.SSL', $this->_SSLSupport);
+        $UsePopups  = Gdn::Config('Garden.UsePopups', $this->_UsePopups);
         
-        // Add protocol webroot definition regardless
+        // Add protocol webroot & use popups definitions regardless
         $Sender->AddDefinition('WebRoot', $this->_WebRoot());
+        $Sender->AddDefinition('UsePopups', $UsePopups);
         
         // Set the authenticator protocol regardless (Always use SSL if available?)
         $this->_SetAuthenticatorProtocol(($SSLSupport) ? $this->_HTTPS_PROTOCOL : $this->_HTTP_PROTOCOL);
@@ -82,8 +85,8 @@ class SSLControllers implements Gdn_IPlugin
         $SSession = Gdn::Config('Garden.SecureSession', $this->_SecureSession);
         $pageURL = $this->_PageURL();
         
-        // Add a small jQuery helper to expose the protocol WebRoot to js calls (Might be useful)
-        //$Sender->AddJsFile('plugins/SSLControllers/sslcontrollerhelper.js');
+        // Add a small jQuery helper to expose the protocol WebRoot to js calls (Might be useful) and override default popup behaviour
+        $Sender->AddJsFile('plugins/SSLControllers/sslcontrollerhelper.js');
         
         // TODO: Remove Tracing/Testing
         if($this->trace) echo 'SecureControllers: ' . implode(', ', $SControllers) . '. ';
@@ -210,6 +213,7 @@ class SSLControllers implements Gdn_IPlugin
         $SSLSpecified = Gdn::Config('Garden.SSL', FALSE);
         $SControllers = Gdn::Config('Garden.SecureControllers', $this->_SecureControllers);
         $SSession     = Gdn::Config('Garden.SecureSession', $this->_SecureSession);
+        $UsePopups    = Gdn::Config('Garden.UsePopups', $this->_UsePopups);
         
         // Any value other then FALSE is true
         if($SSLSpecified) $this->_SSLSupport = TRUE; 
@@ -238,6 +242,7 @@ class SSLControllers implements Gdn_IPlugin
         $Config->Set('Garden.SSL', $this->_SSLSupport, TRUE); // Override what the user specified if we know it to be different
         $Config->Set('Garden.SecureControllers', $SControllers, TRUE); // Override okay as we have the user value
         $Config->Set('Garden.SecureSession', $SSession, TRUE); // Override okay as we have user value
+        $Config->Set('Garden.UsePopups', $UsePopups, FALSE); // Override okay as we have user value
         $Config->Set('Garden.Domain',$Domain, TRUE); // Override the current domain as we will need it protocol free
         $Config->Save();
     }
