@@ -42,7 +42,7 @@ $PluginInfo['SSLControllers'] = array(
 /**
  * SSLControllers Plugin
  *
- * @author     Derek Donnelly <derek@derekdonnelly.com>
+ * @author Derek Donnelly <derek@derekdonnelly.com>
  */
 class SSLControllers implements Gdn_IPlugin {
 	
@@ -56,7 +56,7 @@ class SSLControllers implements Gdn_IPlugin {
     const HTTP_PROTOCOL  = 'http://';
     const HTTPS_PROTOCOL = 'https://';
     
-	/**
+    /**
      * Base_Render_Before
      *
      * @param object $Sender
@@ -127,7 +127,7 @@ class SSLControllers implements Gdn_IPlugin {
         }        
     }
     
-	/**
+    /**
      * Retrieve page url
      *
      * @param boolean $AddPort
@@ -151,7 +151,7 @@ class SSLControllers implements Gdn_IPlugin {
         return $URL;
     }
 
-	/**
+    /**
      * Get url with protocol
      *
      * @param string $URL
