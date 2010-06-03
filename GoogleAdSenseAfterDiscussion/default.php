@@ -21,11 +21,13 @@ class GoogleAdSenseAfterDiscussionPlugin implements Gdn_IPlugin
     // Render Adsense unit only when the number of comments in this discussion exceed this value
     // Set to 0 if you always want it to render
     public $MinComments = 0;
+    public $MinCommentsInSession = 0;
     
     public function DiscussionController_BeforeDiscussionRender_Handler(&$Sender)
     {
         if(!IsSet($Sender->Discussion)) return;
-        if($Sender->Discussion->CountComments > $this->MinComments)
+        $Session = Gdn::Session();
+        if($Sender->Discussion->CountComments > (($Session->IsValid()) ? $this->MinCommentsInSession : $this->MinComments))
         {
             include_once(PATH_PLUGINS.DS.'GoogleAdSenseAfterDiscussion'.DS.'class.adsenseafterdiscussionmodule.php');
             $AdSenseAfterDiscussionModule = new AdSenseAfterDiscussionModule($Sender);

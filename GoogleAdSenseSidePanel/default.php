@@ -20,12 +20,14 @@ class GoogleAdSenseSidePanelPlugin implements Gdn_IPlugin
 {
     // Render Adsense unit only when the number of comments in this discussion exceed this value
     // Set to 0 if you always want it to render
-    public $MinComments = 3;
+    public $MinComments = 2;
+    public $MinCommentsInSession = 2;
     
     public function DiscussionController_BeforeDiscussionRender_Handler(&$Sender)
     {
         if(!IsSet($Sender->Discussion)) return;
-        if($Sender->Discussion->CountComments > $this->MinComments)
+        $Session = Gdn::Session();
+        if($Sender->Discussion->CountComments > (($Session->IsValid()) ? $this->MinCommentsInSession : $this->MinComments))
         {
             include_once(PATH_PLUGINS.DS.'GoogleAdSenseSidePanel'.DS.'class.adsensesidepanelmodule.php');
             $AdSenseSidePanelModule = new AdSenseSidePanelModule($Sender);
