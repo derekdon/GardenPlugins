@@ -35,28 +35,34 @@ $PluginInfo['SSLControllers'] = array(
 * bootstrap.php
 *
 * PLEASE CHECK THIS PLUGIN IS WORKING AS EXPECTED ON YOUR STAGING SERVER BEFORE YOU PUT IT INTO PRODUCTION! 
-* CHECK THEN RECHECK AJAX FORMS! EHCOING ANYTHING FROM HERE WILL PROBABLY STOP THEM FROM WORKING!
+* CHECK THEN RECHECK AJAX FORMS! PRINT/EHCO ANYTHING FROM HERE WILL PROBABLY STOP THEM FROM WORKING!
 *
 */
 
-class SSLControllers implements Gdn_IPlugin
-{
+/**
+ * SSLControllers Plugin
+ *
+ * @author     Derek Donnelly <derek@derekdonnelly.com>
+ */
+class SSLControllers implements Gdn_IPlugin {
+	
     // Class defaults
     protected $_SSLSupport = TRUE;
     protected $_SecureControllers = array('entrycontroller', 'utilitycontroller', 'settingscontroller', 'postcontroller'); // Default controllers to secure at setup
     protected $_SecureSession = FALSE;
     protected $_UsePopups = FALSE;
-    protected $_HTTP_PROTOCOL = 'http://'; // Why do I get an error when I try to define constants?
-    protected $_HTTPS_PROTOCOL = 'https://';
     protected $_ProtocolWebRoot = '';
     
-    // TODO: Remove Tracing/Testing
-    // TRUE gives you info re the current controller etc, but *** NONE OF YOUR AJAX FORMS WILL WORK PROPERLY!!!! ***
-    // Added traces to aid debugging, but they were the cause of most of my problems!
-    public $trace = FALSE; 
+    const HTTP_PROTOCOL  = 'http://';
+    const HTTPS_PROTOCOL = 'https://';
     
-    public function Base_Render_Before(&$Sender)
-    {
+	/**
+     * Base_Render_Before
+     *
+     * @param object $Sender
+     */
+    public function Base_Render_Before(&$Sender) {
+    	
         // Don't proceed if the sender is Leaving
         if((Isset($Sender->Leaving) && ($Sender->Leaving))) return;
         
@@ -69,7 +75,7 @@ class SSLControllers implements Gdn_IPlugin
         $Sender->AddDefinition('UsePopups', $UsePopups);
         
         // Set the authenticator protocol regardless (Always use SSL if available?)
-        $this->_SetAuthenticatorProtocol(($SSLSupport) ? $this->_HTTPS_PROTOCOL : $this->_HTTP_PROTOCOL);
+        $this->_SetAuthenticatorProtocol(($SSLSupport) ? self::HTTPS_PROTOCOL : self::HTTP_PROTOCOL);
         
         // Get url info
         $URLSecure = $this->_URLSecure();
@@ -88,58 +94,47 @@ class SSLControllers implements Gdn_IPlugin
         // Add a small jQuery helper to expose the protocol WebRoot to js calls (Might be useful) and override default popup behaviour
         $Sender->AddJsFile('plugins/SSLControllers/sslcontrollerhelper.js');
         
-        // TODO: Remove Tracing/Testing
-        if($this->trace) echo 'SecureControllers: ' . implode(', ', $SControllers) . '. ';
-        if($this->trace) echo 'PageURL: ' . $pageURL;
-        if($this->trace) echo ' Sender->RedirectUrl: ' . $Sender->RedirectUrl;
-        if($this->trace) if(Isset($Sender->Form)) echo ' Target: ' . $Sender->Form->GetValue('Target', '');
-        if($this->trace) echo ' SignInUrl: ' . Gdn::Authenticator()->SignInUrl();
-        if($this->trace) echo ' SSession: ' . $SSession;
-        
-        
         // Check if the sender is a secure controller or if we should secure the session
-        if(($SSLSupport) && (in_array($ControllerName, $SControllers) || ($SSession && $Session->IsValid())))
-        {
+        if(($SSLSupport) && (in_array($ControllerName, $SControllers) || ($SSession && $Session->IsValid()))) {
+        	
             // Check if the controller has a form and that it is not posting back
-            if(Isset($Sender->Form) && ($Sender->Form->IsPostBack() !== TRUE))
-            {
+            if(Isset($Sender->Form) && ($Sender->Form->IsPostBack() !== TRUE)) {
+            	
                 // Check if the current connection is secure
-                if(!$URLSecure)
-                {
+                if(!$URLSecure) {
+                	
                     // Get the secure page url and update the RedirectUrl if set to the original
-                    $NewPageURL = $this->_GetUrlProtocol($pageURL, $this->_HTTPS_PROTOCOL);
+                    $NewPageURL = $this->_GetUrlProtocol($pageURL, self::HTTPS_PROTOCOL);
                     if($Sender->RedirectUrl == $pageURL) $Sender->RedirectUrl = $NewPageURL;
                     
                     // Redirect back to controller using the secure url
                     Redirect($NewPageURL);
                 }
             }
-            
-            // TODO: Remove Tracing/Testing
-            if($this->trace) echo ' (Secure Controller)';
         }
-        else // Unsecure controller
-        {
+        else { // Unsecure controller
+        	
             // Make sure the controller is not on/still using a secure connection
-            if($URLSecure)
-            {
+            if($URLSecure) {
+            	
                 // Get the unsecure page url and update the RedirectUrl if set to the original
-                $NewPageURL = $this->_GetUrlProtocol($pageURL, $this->_HTTP_PROTOCOL);
+                $NewPageURL = $this->_GetUrlProtocol($pageURL, self::HTTP_PROTOCOL);
                 if($Sender->RedirectUrl == $pageURL) $Sender->RedirectUrl = $NewPageURL;
                 
                 // Redirect back to controller using the unsecure url
                 Redirect($NewPageURL);
             }
-            
-            // TODO: Remove Tracing/Testing
-            if($this->trace) echo ' (Unsecure Controller)';
         }        
     }
     
-    // Get the incoming url
-    protected function _PageURL($AddPort = FALSE)
-    {
-        $URL = 'http';
+	/**
+     * Retrieve page url
+     *
+     * @param boolean $AddPort
+     * @return string
+     */
+    protected function _PageURL($AddPort = FALSE) {
+    	$URL = 'http';
         if((Isset($_SERVER["HTTPS"])) && ($_SERVER["HTTPS"] == "on")) 
             $URL .= "s";
         $URL .= "://";
@@ -155,59 +150,84 @@ class SSLControllers implements Gdn_IPlugin
 
         return $URL;
     }
-    
-    // Get url with protocol
-    protected function _GetUrlProtocol($URL = '', $Protocol = '')
-    {
-        // Error trapping
+
+	/**
+     * Get url with protocol
+     *
+     * @param string $URL
+     * @param string $Protocol
+     * @return string
+     */
+    protected function _GetUrlProtocol($URL = '', $Protocol = '') {
+    	// Error trapping
         $URL = ($URL != '') ? $URL : $this->_PageURL();
-        $Protocol = ($Protocol != '') ? $Protocol : $this->_HTTP_PROTOCOL;
-        if($Protocol != $this->_HTTP_PROTOCOL && $Protocol != $this->_HTTPS_PROTOCOL) return;
+        $Protocol = ($Protocol != '') ? $Protocol : self::HTTP_PROTOCOL;
+        if($Protocol != self::HTTP_PROTOCOL && $Protocol != self::HTTPS_PROTOCOL) return;
         
         // Remove current protocol
-        if(substr($URL, 0, 8) == $this->_HTTPS_PROTOCOL) $URL = substr($URL, 8);
-        if(substr($URL, 0, 7) == $this->_HTTP_PROTOCOL) $URL = substr($URL, 7);
+        if(substr($URL, 0, 8) == self::HTTPS_PROTOCOL) $URL = substr($URL, 8);
+        if(substr($URL, 0, 7) == self::HTTP_PROTOCOL) $URL = substr($URL, 7);
         
         return $Protocol . $URL;
     }
     
-    // Check if a url is secure
-    protected function _URLSecure($URL = '')
-    {
-        $URL = ($URL != '') ? $URL : $this->_PageURL();
-        return (substr($URL, 0, 8) == $this->_HTTPS_PROTOCOL) ? TRUE : FALSE;
+    /**
+     * Check if a url is secure
+     *
+     * @param string $URL
+     * @return boolean
+     */
+    protected function _URLSecure($URL = '') {
+    	$URL = ($URL != '') ? $URL : $this->_PageURL();
+        return (substr($URL, 0, 8) == self::HTTPS_PROTOCOL) ? TRUE : FALSE;
     }
 
-    // Get a valid protocol
-    protected function _GetValidProtocol($Protocol = '')
-    {
-        $Protocol = ($Protocol != '') ? $Protocol : $this->_HTTP_PROTOCOL;
-        return (($Protocol != $this->_HTTP_PROTOCOL) && ($Protocol != $this->_HTTPS_PROTOCOL)) ? $this->_HTTP_PROTOCOL : $Protocol;
+    /**
+     * Get a valid protocol
+     *
+     * @param string $Protocol
+     * @return string
+     */
+    protected function _GetValidProtocol($Protocol = '') {
+    	$Protocol = ($Protocol != '') ? $Protocol : self::HTTP_PROTOCOL;
+        return (($Protocol != self::HTTP_PROTOCOL) && ($Protocol != self::HTTPS_PROTOCOL)) ? self::HTTP_PROTOCOL : $Protocol;
     }
     
-    // Get the web root with the protocol included
-    protected function _WebRoot()
-    {
+    /**
+     * Get the web root with the protocol included
+     *
+     * @return string
+     */
+    protected function _WebRoot() {
         if($this->_ProtocolWebRoot == '') $this->_PageURL();
         return $this->_ProtocolWebRoot;
     }
     
-    // Set Authenticator Protocol
-    protected function _SetAuthenticatorProtocol($Protocol = '')
-    {
+    /**
+     * Set Authenticator Protocol
+     *
+     * @param string $Protocol
+     */
+    protected function _SetAuthenticatorProtocol($Protocol = '') {
         $Protocol = $this->_GetValidProtocol($Protocol);
         Gdn::Authenticator()->Protocol(rtrim($Protocol, '://'));
     }
     
-    // Used by the javascript helper
-    public function PluginController_GetWebRoot_Create(&$Sender)
-    {
+    /**
+     * Used by the javascript helper
+     *
+     * @param object $Sender
+     */
+    public function PluginController_GetWebRoot_Create(&$Sender) {
         echo json_encode(array("WebRoot" => $this->_WebRoot())); 
     }
 
-    // Do setup
-    public function Setup()
-    {
+    /**
+     * Run Setup
+     *
+     */
+    public function Setup() {
+    	
         // Get user defaults and if the server can support SSL
         $Domain       = Gdn::Config('Garden.Domain', '');
         $SSLSpecified = Gdn::Config('Garden.SSL', FALSE);
@@ -221,14 +241,14 @@ class SSLControllers implements Gdn_IPlugin
         // Remove any protocol prefixes from the domain
         if(($Domain != '') && ($Domain !== FALSE))
         {
-            if(substr($Domain, 0, 7) == $this->_HTTP_PROTOCOL)
+            if(substr($Domain, 0, 7) == self::HTTP_PROTOCOL)
                 $Domain = substr($Domain, 7);
-            else if(substr($Domain, 0, 8) == $this->_HTTPS_PROTOCOL)
+            else if(substr($Domain, 0, 8) == self::HTTPS_PROTOCOL)
                 $Domain = substr($Domain, 8);
         }
         
         // Do a system check on SSL support
-        // TODO: Find out if this is the correct or best way to do this
+        // TODO: Find out if this is the correct/best way to do this
         if(!$this->_SSLSupport)
         {
             $SSLCheck = @fsockopen('ssl://' . $Domain, 443, $errno, $errstr, 30); // Not working for me at the moment? Might be my staging server. Error: Name or service not known?
